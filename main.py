@@ -10,17 +10,17 @@ HEIGHT = 600
 FPS = 60
 sc = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
-font = pygame.font.SysFont('Aria', 50)
+font = pygame.font.SysFont('Aria', 100)
 lvl_game = 1
 from load import *
 
 
 def game_lvl():
     fon.update()
-    player1_group.draw(sc)
-    player1_group.update()
     player2_group.draw(sc)
     player2_group.update()
+    player1_group.draw(sc)
+    player1_group.update()
     pygame.display.update()
 
 class Fon:
@@ -61,6 +61,7 @@ class Player_1(pygame.sprite.Sprite):
         self.mask_list = []
         self.rect.center = (200, 380)
         self.hp_bar = 'blue'
+        self.text = False
         self.key = pygame.key.get_pressed()
 
     def move(self):
@@ -146,6 +147,40 @@ class Player_1(pygame.sprite.Sprite):
             y = point[1]
             pygame.draw.circle(sc, 'red', (x, y), 3)
 
+    def life(self):
+        if len(set(self.mask_list) & set(player2.mask_list)) > 0 and self.flag_damage:
+            self.hp += 10
+            self.flag_damage = False
+
+
+    def winner(self):
+        if self.hp <= 0:
+            # text_render = font.render('player 2 is winner!', True, 'black')
+            # sc.blit(text_render, (370, 300))
+            player2.text = True
+            self.kill()
+            player2.anime_idle = False
+            player2.anime_atk = False
+            player2.anime_run = False
+            player2.flag_damage = False
+            player2.jump = False
+        elif self.hp >= 200:
+            # text_2 = font.render('player 1 is winner!', True, 'black')
+            # sc.blit(text_2, (370, 300))
+            self.text = True
+            self.anime_idle = False
+            self.anime_atk = False
+            self.anime_run = False
+            self.flag_damage = False
+            self.jump = False
+            player2.kill()
+
+
+    def tex_render(self):
+        if self.text:
+            text_2 = font.render('player 1 is winner!', True, 'black')
+            sc.blit(text_2, (300, 150))
+
 
     def update(self):
         if self.rect.center[0] - player2.rect.center[0] < 0:
@@ -153,12 +188,16 @@ class Player_1(pygame.sprite.Sprite):
         else:
             self.dir = 'left'
         self.key = pygame.key.get_pressed()
+        self.winner()
+        self.tex_render()
         self.move()
         self.animation()
         self.attack()
         self.jumps()
         self.draw_hp_bar()
         self.maska_k()
+        self.life()
+
 
 
 
@@ -185,6 +224,7 @@ class Player_2(pygame.sprite.Sprite):
         self.mask_list = []
         self.rect.center = (1000, 380)
         self.hp_bar = 'red'
+        self.text = False
         self.key = pygame.key.get_pressed()
 
     def move(self):
@@ -237,10 +277,19 @@ class Player_2(pygame.sprite.Sprite):
             self.timer_anime = 0
         if self.anime_idle:
             self.current_list_image = self.image_lists['idle']
+            self.mask = pygame.mask.from_surface(self.image)
+            self.mask_outline = self.mask.outline()
+            self.mask_list = []
         elif self.anime_run:
             self.current_list_image = self.image_lists['run']
+            self.mask = pygame.mask.from_surface(self.image)
+            self.mask_outline = self.mask.outline()
+            self.mask_list = []
         elif self.anime_atk:
             self.current_list_image = self.image_lists['atk']
+            self.mask = pygame.mask.from_surface(self.image)
+            self.mask_outline = self.mask.outline()
+            self.mask_list = []
         try:
             if self.dir == 'right':
                 self.image = self.current_list_image[self.frame]
@@ -250,7 +299,8 @@ class Player_2(pygame.sprite.Sprite):
             self.frame = 0
 
     def draw_hp_bar(self):
-        pygame.draw.rect(sc, self.hp_bar, (600,0, 600 * self.hp / 100, 50))
+        pygame.draw.rect(sc, self.hp_bar, (0,0, 1200, 50))
+
 
     def maska_k(self):
         self.mask_list = []
@@ -261,18 +311,30 @@ class Player_2(pygame.sprite.Sprite):
             y = point[1]
             pygame.draw.circle(sc, 'green', (x, y), 3)
 
+    def life(self):
+        if len(set(self.mask_list) & set(player1.mask_list)) > 0 and self.flag_damage:
+            player1.hp -= 10
+            self.flag_damage = False
+
+    def tex_render(self):
+        if self.text:
+            text_1 = font.render('player 2 is winner!', True, 'black')
+            sc.blit(text_1, (300, 150))
+
     def update(self):
         if self.rect.center[0] - player1.rect.center[0] < 0:
             self.dir = 'right'
         else:
             self.dir = 'left'
         self.key = pygame.key.get_pressed()
+        self.tex_render()
         self.move()
         self.animation()
         self.attack()
         self.jumps()
         self.draw_hp_bar()
         self.maska_k()
+        self.life()
 
 
 
